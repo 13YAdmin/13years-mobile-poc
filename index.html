@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proof of Concept - 13 Years HORIZONTAL Scroll Optimization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        .version-bad {
+            color: #e74c3c;
+        }
+
+        .version-good {
+            color: #10b981;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #e74c3c;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #10b981;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(30px);
+        }
+
+        /* Page Container - HORIZONTAL SCROLL comme 13-years.com */
+        .page {
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: absolute;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .page::-webkit-scrollbar {
+            display: none;
+        }
+
+        .page-scroll {
+            width: 500vh; /* 5 sections x 100vh */
+            height: 100vh;
+            display: flex;
+            flex-direction: row;
+            transform: rotate(90deg) translateY(-100vh);
+            transform-origin: top left;
+        }
+
+        /* Sections HORIZONTALES */
+        .section {
+            min-width: 100vh; /* En rotation, vh devient la "largeur" */
+            height: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 40px;
+            position: relative;
+            transform: rotate(-90deg) translateX(-100vh);
+            transform-origin: top left;
+        }
+
+        .section-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .section-2 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .section-3 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .section-4 {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+
+        .section-5 {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+
+        .content {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 6vw, 4rem);
+            margin-bottom: 20px;
+            font-weight: 900;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        /* Parallax Elements */
+        .parallax-element {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .parallax-element.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        .card.visible {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            opacity: 0.7;
+            animation: bounceHorizontal 2s infinite;
+        }
+
+        @keyframes bounceHorizontal {
+            0%, 100% { transform: translateY(-50%) rotate(-90deg) translateX(0); }
+            50% { transform: translateY(-50%) rotate(-90deg) translateX(10px); }
+        }
+
+        .scroll-indicator svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        .scroll-text {
+            font-size: 12px;
+            color: white;
+            margin-top: 5px;
+            white-space: nowrap;
+        }
+
+        /* Info Badge */
+        .info-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 999;
+        }
+
+        .fps-counter {
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .scroll-direction {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Instructions */
+        .instructions {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 13px;
+            max-width: 250px;
+            z-index: 998;
+            line-height: 1.5;
+        }
+
+        .instructions strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* Mobile specific */
+        @media (max-width: 768px) {
+            .toggle-container {
+                top: 10px;
+                padding: 8px 12px;
+                font-size: 11px;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .toggle-label {
+                font-size: 10px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .instructions {
+                display: none;
+            }
+
+            h1 {
+                font-size: clamp(1.5rem, 8vw, 3rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toggle Switch -->
+    <div class="toggle-container">
+        <span class="toggle-label version-bad">❌ Actuelle (Saccadée)</span>
+        <div class="toggle-switch" id="toggle"></div>
+        <span class="toggle-label version-good">✅ Optimisée (Fluide)</span>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <strong>📱 Sur Mobile :</strong>
+        Scrollez vers le HAUT/BAS pour naviguer horizontalement →
+        <br><br>
+        <strong>🖱️ Sur Desktop :</strong>
+        Utilisez la molette de souris
+    </div>
+
+    <!-- Info Badge -->
+    <div class="info-badge">
+        FPS: <span class="fps-counter" id="fps">--</span>
+        <div class="scroll-direction">Scroll: <span id="direction">Horizontal →</span></div>
+    </div>
+
+    <!-- Page Container (comme 13-years.com) -->
+    <div class="page" id="pageContainer">
+        <div class="page-scroll">
+            <!-- Section 1 -->
+            <section class="section section-1">
+                <div class="content">
+                    <h1 class="parallax-element">13 Years</h1>
+                    <p class="subtitle parallax-element">Agence de communication & design créative</p>
+                    <p class="subtitle parallax-element" style="margin-top: 20px;">
+                        Spécialisée en RH, Communication interne, Marque Employeur
+                    </p>
+                    <div class="scroll-indicator">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                        </svg>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2 -->
+            <section class="section section-2">
+                <div class="content">
+                    <h1 class="parallax-element">Nous Réinventons</h1>
+                    <p class="subtitle parallax-element">Les stratégies people et cultures de travail</p>
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3>Stratégie</h3>
+                            <p>Vision</p>
+                        </div>
+                        <div class="card">
+                            <h3>Communication</h3>
+                            <p>Interne & Externe</p>
+                        </div>
+                        <div class="card">
+                            <h3>Design</h3>
+                            <p>Créatif</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3 -->
+            <section class="section section-3">
+                <div class="content">
+                    <h1 class="parallax-element">Portfolio</h1>
+                    <p class="subtitle parallax-element">50+ grandes entreprises</p>
+                    <div class="cards-grid">
+                        <div class="card">L'Oréal</div>
+                        <div class="card">Orange</div>
+                        <div class="card">Carrefour</div>
+                        <div class="card">Safran</div>
+                        <div class="card">Accor</div>
+                        <div class="card">LVMH</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4 -->
+            <section class="section section-4">
+                <div class="content">
+                    <h1 class="parallax-element">L'Équipe</h1>
+                    <p class="subtitle parallax-element">Des experts passionnés</p>
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3>Ghassan</h3>
+                            <p>Stratégie</p>
+                        </div>
+                        <div class="card">
+                            <h3>Cédric</h3>
+                            <p>Marketing</p>
+                        </div>
+                        <div class="card">
+                            <h3>Reena</h3>
+                            <p>Branding</p>
+                        </div>
+                        <div class="card">
+                            <h3>Chloé</h3>
+                            <p>Projet</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 5 -->
+            <section class="section section-5">
+                <div class="content">
+                    <h1 class="parallax-element">Contact</h1>
+                    <p class="subtitle parallax-element">Un projet en tête ?</p>
+                    <p class="subtitle parallax-element" style="margin-top: 30px;">
+                        tatiana@13-years.com<br>
+                        +33 (0)7 69 10 72 41
+                    </p>
+                    <p class="subtitle parallax-element" style="margin-top: 30px;">
+                        83 bd Richard Lenoir<br>
+                        75011 Paris
+                    </p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // PROOF OF CONCEPT - 13 Years HORIZONTAL SCROLL
+        // Architecture: Scroll vertical → visuel horizontal (rotation 90°)
+        // ============================================
+
+        const toggle = document.getElementById('toggle');
+        const pageContainer = document.getElementById('pageContainer');
+        const fpsCounter = document.getElementById('fps');
+
+        let isOptimized = false;
+
+        // FPS Counter
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fps = 0;
+
+        function updateFPS() {
+            const currentTime = performance.now();
+            frameCount++;
+
+            if (currentTime >= lastTime + 1000) {
+                fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
+                fpsCounter.textContent = fps;
+                fpsCounter.style.color = fps >= 50 ? '#10b981' : fps >= 30 ? '#f59e0b' : '#e74c3c';
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+
+            requestAnimationFrame(updateFPS);
+        }
+        updateFPS();
+
+        // Toggle Version
+        toggle.addEventListener('click', () => {
+            isOptimized = !isOptimized;
+            toggle.classList.toggle('active');
+            setupScrollBehavior();
+
+            // Message alert
+            const message = isOptimized
+                ? '✅ VERSION OPTIMISÉE : Scroll natif fluide activé ! Ressentez la différence.'
+                : '❌ VERSION ACTUELLE : Scroll manipulé (saccadé). Vous allez sentir les saccades.';
+
+            if ('ontouchstart' in window) {
+                setTimeout(() => alert(message), 300);
+            }
+        });
+
+        // Setup Scroll Behavior
+        function setupScrollBehavior() {
+            // Nettoyer les anciens listeners
+            const oldHandlers = pageContainer.dataset.handlers;
+            if (oldHandlers) {
+                JSON.parse(oldHandlers).forEach(id => {
+                    document.removeEventListener('touchmove', window['handler_' + id]);
+                });
+            }
+
+            if (!isOptimized) {
+                setupBadVersion();
+            } else {
+                setupGoodVersion();
+            }
+        }
+
+        // ❌ BAD VERSION - Simule le code actuel de 13-years.com
+        function setupBadVersion() {
+            let lastY = 0;
+            let lastX = 0;
+
+            // Handler ID pour tracking
+            const handlerId = Date.now();
+
+            // Interception touchmove (EXACTEMENT comme le site actuel)
+            const touchMoveHandler = function(e) {
+                const currentY = e.touches[0].clientY;
+                const currentX = e.touches[0].clientX;
+
+                const diffX = Math.abs(currentX - lastX);
+                const diffY = Math.abs(currentY - lastY);
+
+                // PROBLÈME : Manipulation manuelle du scrollTop
+                // Même pour scroll horizontal !
+                if (diffX > diffY) {
+                    if (currentX > lastX) {
+                        pageContainer.scrollTop -= 22;
+                    } else {
+                        pageContainer.scrollTop += 22;
+                    }
+                } else {
+                    if (currentY > lastY) {
+                        pageContainer.scrollTop -= 7;
+                    } else {
+                        pageContainer.scrollTop += 7;
+                    }
+                }
+
+                lastY = currentY;
+                lastX = currentX;
+            };
+
+            // Stocker le handler
+            window['handler_' + handlerId] = touchMoveHandler;
+            pageContainer.dataset.handlers = JSON.stringify([handlerId]);
+
+            // Event listener NON-PASSIF (bloque le scroll natif)
+            document.addEventListener('touchmove', touchMoveHandler);
+
+            // Scroll handler non optimisé
+            pageContainer.addEventListener('scroll', handleScrollBad);
+        }
+
+        // Scroll handler BAD (calculs intensifs)
+        function handleScrollBad() {
+            // Recalcul COMPLET à chaque frame (TRÈS MAUVAIS)
+            document.querySelectorAll('.parallax-element').forEach(el => {
+                const rect = el.getBoundingClientRect(); // REFLOW !
+                const parent = el.closest('.section');
+                if (parent) {
+                    const parentRect = parent.getBoundingClientRect();
+                    if (parentRect.left < window.innerWidth && parentRect.right > 0) {
+                        el.classList.add('visible');
+                    }
+                }
+            });
+
+            document.querySelectorAll('.card').forEach((card, index) => {
+                const rect = card.getBoundingClientRect(); // REFLOW !
+                const parent = card.closest('.section');
+                if (parent) {
+                    const parentRect = parent.getBoundingClientRect();
+                    if (parentRect.left < window.innerWidth && parentRect.right > 0) {
+                        setTimeout(() => card.classList.add('visible'), index * 100);
+                    }
+                }
+            });
+        }
+
+        // ✅ GOOD VERSION - Optimisée
+        function setupGoodVersion() {
+            // PAS d'interception touchmove = scroll 100% natif
+            pageContainer.dataset.handlers = JSON.stringify([]);
+
+            // Scroll handler optimisé avec RAF
+            let ticking = false;
+
+            const scrollHandler = function() {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        handleScrollGood();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            };
+
+            pageContainer.addEventListener('scroll', scrollHandler, { passive: true });
+        }
+
+        // Scroll handler GOOD (optimisé avec cache)
+        let elementsCache = null;
+
+        function cacheElements() {
+            elementsCache = {
+                parallax: Array.from(document.querySelectorAll('.parallax-element')),
+                cards: Array.from(document.querySelectorAll('.card')),
+                sections: Array.from(document.querySelectorAll('.section'))
+            };
+        }
+
+        function handleScrollGood() {
+            if (!elementsCache) cacheElements();
+
+            const viewportWidth = window.innerWidth;
+
+            // Vérifier visibilité des sections (cache utilisé)
+            elementsCache.sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                const isVisible = rect.left < viewportWidth && rect.right > 0;
+
+                if (isVisible) {
+                    // Animer les éléments de cette section
+                    section.querySelectorAll('.parallax-element').forEach(el => {
+                        el.classList.add('visible');
+                    });
+
+                    section.querySelectorAll('.card').forEach((card, index) => {
+                        setTimeout(() => card.classList.add('visible'), index * 100);
+                    });
+                }
+            });
+        }
+
+        // Intersection Observer (VERSION OPTIMISÉE uniquement)
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && isOptimized) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.3,
+                rootMargin: '0px'
+            });
+
+            document.querySelectorAll('.parallax-element, .card').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Init
+        setupScrollBehavior();
+
+        // Instructions initiales
+        if ('ontouchstart' in window) {
+            setTimeout(() => {
+                alert('🎯 PROOF OF CONCEPT - Scroll Horizontal\n\n' +
+                      '1️⃣ Scrollez VERTICALEMENT (👆👇) pour naviguer HORIZONTALEMENT (←→)\n\n' +
+                      '2️⃣ Commencez avec la version ROUGE (actuelle) → saccadé\n\n' +
+                      '3️⃣ Switchez vers VERT (optimisée) → fluide !\n\n' +
+                      '📊 Regardez le compteur FPS en bas à droite');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
