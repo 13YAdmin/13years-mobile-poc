@@ -77,12 +77,17 @@
             transform: translateX(30px);
         }
 
-        /* DESKTOP : Scroll vertical → horizontal (rotation comme site actuel) */
+        /* DESKTOP : COPIE EXACTE de la structure 13-years.com */
         @media (min-width: 1024px) {
+            /* Container principal - ROTATION -90° */
             .page {
-                height: 100vh;
-                overflow-y: auto;
+                width: 100vh;
+                height: 100vw;
+                transform: rotate(-90deg) translateX(-100vh);
+                transform-origin: top left;
+                overflow-y: scroll;
                 overflow-x: hidden;
+                position: absolute;
                 scrollbar-width: none;
                 -ms-overflow-style: none;
             }
@@ -91,23 +96,20 @@
                 display: none;
             }
 
+            /* Contenu - ROTATION +90° (compense la rotation de .page) */
             .page-scroll {
-                /* CLEF : height (pas width) pour avoir du contenu à scroller verticalement */
-                height: 500vh;
-                width: 100vw;
+                width: 425vw;
                 display: flex;
-                flex-direction: column;  /* Vertical avant rotation */
+                flex-direction: row;
                 transform: rotate(90deg) translateY(-100vh);
                 transform-origin: top left;
             }
 
+            /* Sections - Pas de rotation supplémentaire */
             .section {
-                /* Chaque section fait 1 écran AVANT rotation */
-                width: 100vw;
+                min-width: 85vw;
                 height: 100vh;
                 flex-shrink: 0;
-                transform: rotate(-90deg) translateX(-100vh);
-                transform-origin: top left;
             }
         }
 
