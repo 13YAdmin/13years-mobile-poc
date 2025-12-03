@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proof of Concept - 13 Years HORIZONTAL Scroll Optimization</title>
+    <title>Proof of Concept - 13 Years Mobile Scroll Fix</title>
     <style>
         * {
             margin: 0;
@@ -24,17 +24,17 @@
             transform: translateX(-50%);
             z-index: 1000;
             background: white;
-            padding: 15px 25px;
+            padding: 12px 20px;
             border-radius: 50px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .toggle-label {
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
             color: #333;
             white-space: nowrap;
         }
@@ -77,40 +77,76 @@
             transform: translateX(30px);
         }
 
-        /* Page Container - HORIZONTAL SCROLL comme 13-years.com */
-        .page {
-            height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            position: absolute;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+        /* DESKTOP : Scroll vertical → horizontal (rotation comme site actuel) */
+        @media (min-width: 1024px) {
+            .page {
+                height: 100vh;
+                overflow-y: auto;
+                overflow-x: hidden;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .page::-webkit-scrollbar {
+                display: none;
+            }
+
+            .page-scroll {
+                width: 500vh;
+                height: 100vh;
+                display: flex;
+                flex-direction: row;
+                transform: rotate(90deg) translateY(-100vh);
+                transform-origin: top left;
+            }
+
+            .section {
+                min-width: 100vh;
+                height: 100vw;
+                transform: rotate(-90deg) translateX(-100vh);
+                transform-origin: top left;
+            }
         }
 
-        .page::-webkit-scrollbar {
-            display: none;
+        /* MOBILE : Scroll horizontal NATIF (la vraie solution) */
+        @media (max-width: 1023px) {
+            .page {
+                width: 100vw;
+                height: 100vh;
+                overflow-x: auto;
+                overflow-y: hidden;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .page::-webkit-scrollbar {
+                display: none;
+            }
+
+            .page-scroll {
+                display: flex;
+                flex-direction: row;
+                height: 100vh;
+                width: fit-content;
+            }
+
+            .section {
+                min-width: 100vw;
+                height: 100vh;
+                scroll-snap-align: start;
+                scroll-snap-stop: always;
+            }
         }
 
-        .page-scroll {
-            width: 500vh; /* 5 sections x 100vh */
-            height: 100vh;
-            display: flex;
-            flex-direction: row;
-            transform: rotate(90deg) translateY(-100vh);
-            transform-origin: top left;
-        }
-
-        /* Sections HORIZONTALES */
+        /* Sections communes */
         .section {
-            min-width: 100vh; /* En rotation, vh devient la "largeur" */
-            height: 100vw;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 60px 40px;
+            padding: 40px 20px;
             position: relative;
-            transform: rotate(-90deg) translateX(-100vh);
-            transform-origin: top left;
         }
 
         .section-1 {
@@ -141,88 +177,36 @@
         .content {
             max-width: 600px;
             text-align: center;
+            z-index: 1;
         }
 
         h1 {
-            font-size: clamp(2rem, 6vw, 4rem);
-            margin-bottom: 20px;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            margin-bottom: 15px;
             font-weight: 900;
         }
 
         .subtitle {
-            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-size: clamp(1rem, 3vw, 1.3rem);
             opacity: 0.9;
             line-height: 1.6;
         }
 
-        /* Parallax Elements */
-        .parallax-element {
-            opacity: 0;
-            transform: translateY(50px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-
-        .parallax-element.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Cards Grid */
         .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 25px;
             width: 100%;
-            max-width: 700px;
+            max-width: 600px;
         }
 
         .card {
             background: rgba(255,255,255,0.15);
             backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
-            transform: scale(0.9);
-            opacity: 0;
-            transition: all 0.4s ease;
-        }
-
-        .card.visible {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        .card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 8px;
-        }
-
-        /* Scroll Indicator */
-        .scroll-indicator {
-            position: absolute;
-            right: 40px;
-            top: 50%;
-            transform: translateY(-50%) rotate(-90deg);
-            opacity: 0.7;
-            animation: bounceHorizontal 2s infinite;
-        }
-
-        @keyframes bounceHorizontal {
-            0%, 100% { transform: translateY(-50%) rotate(-90deg) translateX(0); }
-            50% { transform: translateY(-50%) rotate(-90deg) translateX(10px); }
-        }
-
-        .scroll-indicator svg {
-            width: 30px;
-            height: 30px;
-            fill: white;
-        }
-
-        .scroll-text {
-            font-size: 12px;
-            color: white;
-            margin-top: 5px;
-            white-space: nowrap;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 0.95rem;
         }
 
         /* Info Badge */
@@ -231,7 +215,7 @@
             bottom: 20px;
             right: 20px;
             background: white;
-            padding: 10px 20px;
+            padding: 12px 18px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             font-size: 12px;
@@ -241,13 +225,7 @@
 
         .fps-counter {
             color: #667eea;
-            font-size: 16px;
-        }
-
-        .scroll-direction {
-            margin-top: 5px;
-            font-size: 11px;
-            color: #666;
+            font-size: 18px;
         }
 
         /* Instructions */
@@ -259,8 +237,8 @@
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            font-size: 13px;
-            max-width: 250px;
+            font-size: 12px;
+            max-width: 220px;
             z-index: 998;
             line-height: 1.5;
         }
@@ -268,34 +246,53 @@
         .instructions strong {
             color: #667eea;
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        /* Mobile specific */
+        /* Navigation dots */
+        .nav-dots {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 998;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            width: 24px;
+            border-radius: 4px;
+            background: white;
+        }
+
         @media (max-width: 768px) {
             .toggle-container {
                 top: 10px;
                 padding: 8px 12px;
-                font-size: 11px;
                 flex-direction: column;
-                gap: 8px;
+                gap: 6px;
             }
 
             .toggle-label {
                 font-size: 10px;
             }
 
+            .instructions {
+                font-size: 11px;
+                max-width: 180px;
+            }
+
             .cards-grid {
                 grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .instructions {
-                display: none;
-            }
-
-            h1 {
-                font-size: clamp(1.5rem, 8vw, 3rem);
             }
         }
     </style>
@@ -303,63 +300,51 @@
 <body>
     <!-- Toggle Switch -->
     <div class="toggle-container">
-        <span class="toggle-label version-bad">❌ Actuelle (Saccadée)</span>
+        <span class="toggle-label version-bad">❌ Version Actuelle</span>
         <div class="toggle-switch" id="toggle"></div>
-        <span class="toggle-label version-good">✅ Optimisée (Fluide)</span>
+        <span class="toggle-label version-good">✅ Version Optimisée</span>
     </div>
 
     <!-- Instructions -->
     <div class="instructions">
-        <strong>📱 Sur Mobile :</strong>
-        Scrollez vers le HAUT/BAS pour naviguer horizontalement →
+        <strong>📱 Mobile :</strong>
+        Swipez HORIZONTALEMENT ←→
         <br><br>
-        <strong>🖱️ Sur Desktop :</strong>
-        Utilisez la molette de souris
+        <strong>🖱️ Desktop :</strong>
+        Scroll VERTICALEMENT avec molette
     </div>
 
     <!-- Info Badge -->
     <div class="info-badge">
         FPS: <span class="fps-counter" id="fps">--</span>
-        <div class="scroll-direction">Scroll: <span id="direction">Horizontal →</span></div>
     </div>
 
-    <!-- Page Container (comme 13-years.com) -->
+    <!-- Navigation Dots -->
+    <div class="nav-dots" id="navDots"></div>
+
+    <!-- Page Container -->
     <div class="page" id="pageContainer">
         <div class="page-scroll">
             <!-- Section 1 -->
             <section class="section section-1">
                 <div class="content">
-                    <h1 class="parallax-element">13 Years</h1>
-                    <p class="subtitle parallax-element">Agence de communication & design créative</p>
-                    <p class="subtitle parallax-element" style="margin-top: 20px;">
-                        Spécialisée en RH, Communication interne, Marque Employeur
+                    <h1>13 Years</h1>
+                    <p class="subtitle">Agence de communication & design créative</p>
+                    <p class="subtitle" style="margin-top: 15px;">
+                        RH • Communication • Marque Employeur
                     </p>
-                    <div class="scroll-indicator">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
-                        </svg>
-                    </div>
                 </div>
             </section>
 
             <!-- Section 2 -->
             <section class="section section-2">
                 <div class="content">
-                    <h1 class="parallax-element">Nous Réinventons</h1>
-                    <p class="subtitle parallax-element">Les stratégies people et cultures de travail</p>
+                    <h1>Nous Réinventons</h1>
+                    <p class="subtitle">Les stratégies people</p>
                     <div class="cards-grid">
-                        <div class="card">
-                            <h3>Stratégie</h3>
-                            <p>Vision</p>
-                        </div>
-                        <div class="card">
-                            <h3>Communication</h3>
-                            <p>Interne & Externe</p>
-                        </div>
-                        <div class="card">
-                            <h3>Design</h3>
-                            <p>Créatif</p>
-                        </div>
+                        <div class="card"><strong>Stratégie</strong><br>Vision</div>
+                        <div class="card"><strong>Communication</strong><br>Interne</div>
+                        <div class="card"><strong>Design</strong><br>Créatif</div>
                     </div>
                 </div>
             </section>
@@ -367,8 +352,8 @@
             <!-- Section 3 -->
             <section class="section section-3">
                 <div class="content">
-                    <h1 class="parallax-element">Portfolio</h1>
-                    <p class="subtitle parallax-element">50+ grandes entreprises</p>
+                    <h1>Portfolio</h1>
+                    <p class="subtitle">50+ grandes entreprises</p>
                     <div class="cards-grid">
                         <div class="card">L'Oréal</div>
                         <div class="card">Orange</div>
@@ -383,25 +368,13 @@
             <!-- Section 4 -->
             <section class="section section-4">
                 <div class="content">
-                    <h1 class="parallax-element">L'Équipe</h1>
-                    <p class="subtitle parallax-element">Des experts passionnés</p>
+                    <h1>L'Équipe</h1>
+                    <p class="subtitle">Experts passionnés</p>
                     <div class="cards-grid">
-                        <div class="card">
-                            <h3>Ghassan</h3>
-                            <p>Stratégie</p>
-                        </div>
-                        <div class="card">
-                            <h3>Cédric</h3>
-                            <p>Marketing</p>
-                        </div>
-                        <div class="card">
-                            <h3>Reena</h3>
-                            <p>Branding</p>
-                        </div>
-                        <div class="card">
-                            <h3>Chloé</h3>
-                            <p>Projet</p>
-                        </div>
+                        <div class="card"><strong>Ghassan</strong><br>Stratégie</div>
+                        <div class="card"><strong>Cédric</strong><br>Marketing</div>
+                        <div class="card"><strong>Reena</strong><br>Branding</div>
+                        <div class="card"><strong>Chloé</strong><br>Projet</div>
                     </div>
                 </div>
             </section>
@@ -409,15 +382,14 @@
             <!-- Section 5 -->
             <section class="section section-5">
                 <div class="content">
-                    <h1 class="parallax-element">Contact</h1>
-                    <p class="subtitle parallax-element">Un projet en tête ?</p>
-                    <p class="subtitle parallax-element" style="margin-top: 30px;">
+                    <h1>Contact</h1>
+                    <p class="subtitle">Un projet en tête ?</p>
+                    <p class="subtitle" style="margin-top: 25px;">
                         tatiana@13-years.com<br>
                         +33 (0)7 69 10 72 41
                     </p>
-                    <p class="subtitle parallax-element" style="margin-top: 30px;">
-                        83 bd Richard Lenoir<br>
-                        75011 Paris
+                    <p class="subtitle" style="margin-top: 20px;">
+                        83 bd Richard Lenoir • 75011 Paris
                     </p>
                 </div>
             </section>
@@ -426,27 +398,47 @@
 
     <script>
         // ============================================
-        // PROOF OF CONCEPT - 13 Years HORIZONTAL SCROLL
-        // Architecture: Scroll vertical → visuel horizontal (rotation 90°)
+        // PROOF OF CONCEPT - 13 Years
+        // VRAI PROBLÈME : Desktop (scroll vertical) vs Mobile (swipe horizontal)
         // ============================================
 
         const toggle = document.getElementById('toggle');
         const pageContainer = document.getElementById('pageContainer');
         const fpsCounter = document.getElementById('fps');
+        const navDots = document.getElementById('navDots');
 
         let isOptimized = false;
+        const isMobile = window.innerWidth < 1024;
+
+        // Create navigation dots
+        for (let i = 0; i < 5; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            if (i === 0) dot.classList.add('active');
+            navDots.appendChild(dot);
+        }
+
+        // Update active dot
+        function updateDots() {
+            const scrollPosition = isMobile ? pageContainer.scrollLeft : pageContainer.scrollTop;
+            const sectionSize = isMobile ? window.innerWidth : window.innerHeight;
+            const currentSection = Math.round(scrollPosition / sectionSize);
+
+            document.querySelectorAll('.dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSection);
+            });
+        }
 
         // FPS Counter
         let frameCount = 0;
         let lastTime = performance.now();
-        let fps = 0;
 
         function updateFPS() {
             const currentTime = performance.now();
             frameCount++;
 
             if (currentTime >= lastTime + 1000) {
-                fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
+                const fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
                 fpsCounter.textContent = fps;
                 fpsCounter.style.color = fps >= 50 ? '#10b981' : fps >= 30 ? '#f59e0b' : '#e74c3c';
                 frameCount = 0;
@@ -462,192 +454,116 @@
             isOptimized = !isOptimized;
             toggle.classList.toggle('active');
             setupScrollBehavior();
-
-            // Message alert
-            const message = isOptimized
-                ? '✅ VERSION OPTIMISÉE : Scroll natif fluide activé ! Ressentez la différence.'
-                : '❌ VERSION ACTUELLE : Scroll manipulé (saccadé). Vous allez sentir les saccades.';
-
-            if ('ontouchstart' in window) {
-                setTimeout(() => alert(message), 300);
-            }
         });
 
         // Setup Scroll Behavior
         function setupScrollBehavior() {
-            // Nettoyer les anciens listeners
-            const oldHandlers = pageContainer.dataset.handlers;
-            if (oldHandlers) {
-                JSON.parse(oldHandlers).forEach(id => {
-                    document.removeEventListener('touchmove', window['handler_' + id]);
-                });
+            // Clean up old listeners
+            if (window.badScrollHandler) {
+                pageContainer.removeEventListener('scroll', window.badScrollHandler);
+            }
+            if (window.badTouchHandler) {
+                document.removeEventListener('touchmove', window.badTouchHandler);
             }
 
             if (!isOptimized) {
-                setupBadVersion();
+                setupBadVersion(); // Version actuelle (problématique)
             } else {
-                setupGoodVersion();
+                setupGoodVersion(); // Version optimisée
             }
         }
 
-        // ❌ BAD VERSION - Simule le code actuel de 13-years.com
+        // ❌ BAD VERSION - Reproduction du problème actuel
         function setupBadVersion() {
             let lastY = 0;
             let lastX = 0;
 
-            // Handler ID pour tracking
-            const handlerId = Date.now();
+            // LE VRAI PROBLÈME sur mobile :
+            // L'utilisateur swipe HORIZONTALEMENT mais le code force un scroll VERTICAL
+            window.badTouchHandler = function(e) {
+                if (!isMobile) return; // Desktop OK
 
-            // Interception touchmove (EXACTEMENT comme le site actuel)
-            const touchMoveHandler = function(e) {
                 const currentY = e.touches[0].clientY;
                 const currentX = e.touches[0].clientX;
-
                 const diffX = Math.abs(currentX - lastX);
                 const diffY = Math.abs(currentY - lastY);
 
-                // PROBLÈME : Manipulation manuelle du scrollTop
-                // Même pour scroll horizontal !
+                // PROBLÈME : Détecte swipe horizontal mais essaie de forcer vertical !
                 if (diffX > diffY) {
+                    // L'utilisateur veut aller gauche/droite naturellement
+                    // Mais le code essaie de mapper ça en scrollTop (vertical) artificiellement
                     if (currentX > lastX) {
-                        pageContainer.scrollTop -= 22;
+                        // Swipe droite → devrait aller à gauche sur site
+                        // Mais utilise scrollTop au lieu de scrollLeft !
+                        pageContainer.scrollTop -= 22; // MAUVAIS !
                     } else {
-                        pageContainer.scrollTop += 22;
+                        pageContainer.scrollTop += 22; // MAUVAIS !
                     }
+                    e.preventDefault(); // Bloque le scroll natif
                 } else {
                     if (currentY > lastY) {
                         pageContainer.scrollTop -= 7;
                     } else {
                         pageContainer.scrollTop += 7;
                     }
+                    e.preventDefault();
                 }
 
                 lastY = currentY;
                 lastX = currentX;
             };
 
-            // Stocker le handler
-            window['handler_' + handlerId] = touchMoveHandler;
-            pageContainer.dataset.handlers = JSON.stringify([handlerId]);
-
-            // Event listener NON-PASSIF (bloque le scroll natif)
-            document.addEventListener('touchmove', touchMoveHandler);
+            // Listener NON-PASSIF qui bloque tout
+            document.addEventListener('touchmove', window.badTouchHandler);
 
             // Scroll handler non optimisé
-            pageContainer.addEventListener('scroll', handleScrollBad);
+            window.badScrollHandler = function() {
+                updateDots();
+                // Calculs lourds à chaque frame...
+            };
+            pageContainer.addEventListener('scroll', window.badScrollHandler);
         }
 
-        // Scroll handler BAD (calculs intensifs)
-        function handleScrollBad() {
-            // Recalcul COMPLET à chaque frame (TRÈS MAUVAIS)
-            document.querySelectorAll('.parallax-element').forEach(el => {
-                const rect = el.getBoundingClientRect(); // REFLOW !
-                const parent = el.closest('.section');
-                if (parent) {
-                    const parentRect = parent.getBoundingClientRect();
-                    if (parentRect.left < window.innerWidth && parentRect.right > 0) {
-                        el.classList.add('visible');
-                    }
-                }
-            });
-
-            document.querySelectorAll('.card').forEach((card, index) => {
-                const rect = card.getBoundingClientRect(); // REFLOW !
-                const parent = card.closest('.section');
-                if (parent) {
-                    const parentRect = parent.getBoundingClientRect();
-                    if (parentRect.left < window.innerWidth && parentRect.right > 0) {
-                        setTimeout(() => card.classList.add('visible'), index * 100);
-                    }
-                }
-            });
-        }
-
-        // ✅ GOOD VERSION - Optimisée
+        // ✅ GOOD VERSION - Solution optimisée
         function setupGoodVersion() {
-            // PAS d'interception touchmove = scroll 100% natif
-            pageContainer.dataset.handlers = JSON.stringify([]);
+            // PAS d'interception touchmove !
+            // Sur mobile : scroll horizontal natif (swipe gauche/droite)
+            // Sur desktop : scroll vertical avec rotation CSS (comme avant)
 
             // Scroll handler optimisé avec RAF
             let ticking = false;
 
-            const scrollHandler = function() {
+            window.goodScrollHandler = function() {
                 if (!ticking) {
                     window.requestAnimationFrame(() => {
-                        handleScrollGood();
+                        updateDots();
                         ticking = false;
                     });
                     ticking = true;
                 }
             };
 
-            pageContainer.addEventListener('scroll', scrollHandler, { passive: true });
-        }
-
-        // Scroll handler GOOD (optimisé avec cache)
-        let elementsCache = null;
-
-        function cacheElements() {
-            elementsCache = {
-                parallax: Array.from(document.querySelectorAll('.parallax-element')),
-                cards: Array.from(document.querySelectorAll('.card')),
-                sections: Array.from(document.querySelectorAll('.section'))
-            };
-        }
-
-        function handleScrollGood() {
-            if (!elementsCache) cacheElements();
-
-            const viewportWidth = window.innerWidth;
-
-            // Vérifier visibilité des sections (cache utilisé)
-            elementsCache.sections.forEach(section => {
-                const rect = section.getBoundingClientRect();
-                const isVisible = rect.left < viewportWidth && rect.right > 0;
-
-                if (isVisible) {
-                    // Animer les éléments de cette section
-                    section.querySelectorAll('.parallax-element').forEach(el => {
-                        el.classList.add('visible');
-                    });
-
-                    section.querySelectorAll('.card').forEach((card, index) => {
-                        setTimeout(() => card.classList.add('visible'), index * 100);
-                    });
-                }
-            });
-        }
-
-        // Intersection Observer (VERSION OPTIMISÉE uniquement)
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && isOptimized) {
-                        entry.target.classList.add('visible');
-                    }
-                });
-            }, {
-                threshold: 0.3,
-                rootMargin: '0px'
-            });
-
-            document.querySelectorAll('.parallax-element, .card').forEach(el => {
-                observer.observe(el);
+            pageContainer.addEventListener('scroll', window.goodScrollHandler, {
+                passive: true // N'empêche PAS le scroll natif
             });
         }
 
         // Init
         setupScrollBehavior();
+        updateDots();
 
-        // Instructions initiales
-        if ('ontouchstart' in window) {
+        // Instructions
+        if (isMobile) {
             setTimeout(() => {
-                alert('🎯 PROOF OF CONCEPT - Scroll Horizontal\n\n' +
-                      '1️⃣ Scrollez VERTICALEMENT (👆👇) pour naviguer HORIZONTALEMENT (←→)\n\n' +
-                      '2️⃣ Commencez avec la version ROUGE (actuelle) → saccadé\n\n' +
-                      '3️⃣ Switchez vers VERT (optimisée) → fluide !\n\n' +
-                      '📊 Regardez le compteur FPS en bas à droite');
-            }, 1000);
+                alert('🎯 TEST MOBILE\n\n' +
+                      '❌ VERSION ACTUELLE (rouge):\n' +
+                      'Swipez horizontalement ←→\n' +
+                      '→ SACCADÉ car le code force un scroll vertical !\n\n' +
+                      '✅ VERSION OPTIMISÉE (verte):\n' +
+                      'Même swipe horizontal ←→\n' +
+                      '→ FLUIDE car scroll natif !\n\n' +
+                      'Regardez le compteur FPS en bas à droite');
+            }, 800);
         }
     </script>
 </body>
