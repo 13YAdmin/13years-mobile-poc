@@ -92,17 +92,20 @@
             }
 
             .page-scroll {
-                width: 500vh;
-                height: 100vh;
+                /* CLEF : height (pas width) pour avoir du contenu à scroller verticalement */
+                height: 500vh;
+                width: 100vw;
                 display: flex;
-                flex-direction: row;
+                flex-direction: column;  /* Vertical avant rotation */
                 transform: rotate(90deg) translateY(-100vh);
                 transform-origin: top left;
             }
 
             .section {
-                min-width: 100vh;
-                height: 100vw;
+                /* Chaque section fait 1 écran AVANT rotation */
+                width: 100vw;
+                height: 100vh;
+                flex-shrink: 0;
                 transform: rotate(-90deg) translateX(-100vh);
                 transform-origin: top left;
             }
