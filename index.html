@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proof of Concept - 13 Years Mobile Scroll Fix</title>
+    <!-- jQuery (comme le site original) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -113,15 +115,12 @@
             }
         }
 
-        /* MOBILE : Scroll horizontal NATIF (la vraie solution) */
+        /* MOBILE : Version BAD (scroll vertical forcé) vs GOOD (scroll horizontal natif) */
         @media (max-width: 1023px) {
             .page {
                 width: 100vw;
                 height: 100vh;
-                overflow-x: auto;
                 overflow-y: hidden;
-                scroll-snap-type: x mandatory;
-                -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
                 -ms-overflow-style: none;
             }
@@ -140,8 +139,35 @@
             .section {
                 min-width: 100vw;
                 height: 100vh;
-                scroll-snap-align: start;
-                scroll-snap-stop: always;
+            }
+
+            /* VERSION BAD : Scroll vertical (comme desktop mais problématique sur mobile) */
+            body.bad-version .page {
+                width: 100vh;
+                height: 100vw;
+                transform: rotate(-90deg) translateX(-100vh);
+                transform-origin: top left;
+                overflow-y: scroll;
+                overflow-x: hidden;
+                position: absolute;
+            }
+
+            body.bad-version .page-scroll {
+                width: 425vw;
+                transform: rotate(90deg) translateY(-100vh);
+                transform-origin: top left;
+            }
+
+            body.bad-version .section {
+                min-width: 85vw;
+                height: 100vh;
+            }
+
+            /* VERSION GOOD : Scroll horizontal natif - SANS SNAP (organique!) */
+            body.good-version .page {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                /* PAS de scroll-snap pour les sections ! */
             }
         }
 
@@ -294,6 +320,7 @@
             .instructions {
                 font-size: 11px;
                 max-width: 180px;
+                bottom: 70px;
             }
 
             .cards-grid {
@@ -302,12 +329,12 @@
         }
     </style>
 </head>
-<body>
+<body class="bad-version">
     <!-- Toggle Switch -->
     <div class="toggle-container">
-        <span class="toggle-label version-bad">❌ Version Actuelle</span>
+        <span class="toggle-label version-bad">❌ Version Actuelle (choppy)</span>
         <div class="toggle-switch" id="toggle"></div>
-        <span class="toggle-label version-good">✅ Version Optimisée</span>
+        <span class="toggle-label version-good">✅ Version Optimisée (fluide)</span>
     </div>
 
     <!-- Instructions -->
@@ -328,7 +355,7 @@
     <div class="nav-dots" id="navDots"></div>
 
     <!-- Page Container -->
-    <div class="page" id="pageContainer">
+    <div class="page" id="page">
         <div class="page-scroll">
             <!-- Section 1 -->
             <section class="section section-1">
@@ -404,16 +431,15 @@
     <script>
         // ============================================
         // PROOF OF CONCEPT - 13 Years
-        // VRAI PROBLÈME : Desktop (scroll vertical) vs Mobile (swipe horizontal)
+        // Reproduction EXACTE du comportement du site original
         // ============================================
 
         const toggle = document.getElementById('toggle');
-        const pageContainer = document.getElementById('pageContainer');
         const fpsCounter = document.getElementById('fps');
         const navDots = document.getElementById('navDots');
+        const isMobile = window.innerWidth < 1024;
 
         let isOptimized = false;
-        const isMobile = window.innerWidth < 1024;
 
         // Create navigation dots
         for (let i = 0; i < 5; i++) {
@@ -425,9 +451,11 @@
 
         // Update active dot
         function updateDots() {
-            const scrollPosition = isMobile ? pageContainer.scrollLeft : pageContainer.scrollTop;
+            const scrollPosition = isMobile
+                ? (isOptimized ? $('#page').scrollLeft() : $('#page').scrollTop())
+                : $('#page').scrollTop();
             const sectionSize = isMobile ? window.innerWidth : window.innerHeight;
-            const currentSection = Math.round(scrollPosition / sectionSize);
+            const currentSection = Math.round(scrollPosition / (sectionSize * 0.85));
 
             document.querySelectorAll('.dot').forEach((dot, index) => {
                 dot.classList.toggle('active', index === currentSection);
@@ -454,91 +482,73 @@
         }
         updateFPS();
 
-        // Toggle Version
-        toggle.addEventListener('click', () => {
-            isOptimized = !isOptimized;
-            toggle.classList.toggle('active');
-            setupScrollBehavior();
-        });
+        // ============================================
+        // ❌ BAD VERSION - Code EXTRAIT de main.js
+        // ============================================
+        var lastY = 0;
+        var lastX = 0;
+        var badTouchHandler = null;
 
-        // Setup Scroll Behavior
-        function setupScrollBehavior() {
-            // Clean up old listeners
-            if (window.badScrollHandler) {
-                pageContainer.removeEventListener('scroll', window.badScrollHandler);
-            }
-            if (window.badTouchHandler) {
-                document.removeEventListener('touchmove', window.badTouchHandler);
-            }
-
-            if (!isOptimized) {
-                setupBadVersion(); // Version actuelle (problématique)
-            } else {
-                setupGoodVersion(); // Version optimisée
-            }
-        }
-
-        // ❌ BAD VERSION - Reproduction du problème actuel
         function setupBadVersion() {
-            let lastY = 0;
-            let lastX = 0;
+            console.log('🔴 BAD VERSION - Code original de 13-years.com');
 
-            // LE VRAI PROBLÈME sur mobile :
-            // L'utilisateur swipe HORIZONTALEMENT mais le code force un scroll VERTICAL
-            window.badTouchHandler = function(e) {
-                if (!isMobile) return; // Desktop OK
+            // Code EXACT extrait de main.js (lignes 1-40)
+            badTouchHandler = function(e) {
+                var currentY = e.originalEvent.touches[0].clientY;
+                var currentX = e.originalEvent.touches[0].clientX;
 
-                const currentY = e.touches[0].clientY;
-                const currentX = e.touches[0].clientX;
-                const diffX = Math.abs(currentX - lastX);
-                const diffY = Math.abs(currentY - lastY);
+                var diffX = currentX - lastX;
+                var diffY = currentY - lastY;
 
-                // PROBLÈME : Détecte swipe horizontal mais essaie de forcer vertical !
-                if (diffX > diffY) {
-                    // L'utilisateur veut aller gauche/droite naturellement
-                    // Mais le code essaie de mapper ça en scrollTop (vertical) artificiellement
-                    if (currentX > lastX) {
-                        // Swipe droite → devrait aller à gauche sur site
-                        // Mais utilise scrollTop au lieu de scrollLeft !
-                        pageContainer.scrollTop -= 22; // MAUVAIS !
+                if(diffX < 0) {
+                    diffX = diffX * -1;
+                }
+                if(diffY < 0) {
+                    diffY = diffY * -1;
+                }
+
+                // LE PROBLÈME : Détecte le swipe horizontal mais force un scrollTop vertical !
+                if(diffX > diffY) {
+                    // L'utilisateur swipe horizontalement (naturel sur mobile)
+                    // Mais le code manipule scrollTop (vertical) avec des incréments fixes
+                    if(currentX > lastX) {
+                        $('.page').scrollTop($('.page').scrollTop() - 22); // Valeur exacte du site original
                     } else {
-                        pageContainer.scrollTop += 22; // MAUVAIS !
+                        $('.page').scrollTop($('.page').scrollTop() + 22); // Valeur exacte du site original
                     }
-                    e.preventDefault(); // Bloque le scroll natif
                 } else {
-                    if (currentY > lastY) {
-                        pageContainer.scrollTop -= 7;
+                    if(currentY > lastY) {
+                        $('.page').scrollTop($('.page').scrollTop() - 7); // Valeur exacte du site original
                     } else {
-                        pageContainer.scrollTop += 7;
+                        $('.page').scrollTop($('.page').scrollTop() + 7); // Valeur exacte du site original
                     }
-                    e.preventDefault();
                 }
 
                 lastY = currentY;
                 lastX = currentX;
             };
 
-            // Listener NON-PASSIF qui bloque tout
-            document.addEventListener('touchmove', window.badTouchHandler);
+            // Listener NON-PASSIF qui bloque le scroll natif
+            $(document).on('touchmove', badTouchHandler);
 
-            // Scroll handler non optimisé
-            window.badScrollHandler = function() {
+            // Scroll handler
+            $('.page').on('scroll', function() {
                 updateDots();
-                // Calculs lourds à chaque frame...
-            };
-            pageContainer.addEventListener('scroll', window.badScrollHandler);
+            });
         }
 
-        // ✅ GOOD VERSION - Solution optimisée
+        // ============================================
+        // ✅ GOOD VERSION - Solution native
+        // ============================================
         function setupGoodVersion() {
+            console.log('🟢 GOOD VERSION - Scroll natif optimisé');
+
             // PAS d'interception touchmove !
-            // Sur mobile : scroll horizontal natif (swipe gauche/droite)
-            // Sur desktop : scroll vertical avec rotation CSS (comme avant)
+            // Le navigateur gère nativement le scroll horizontal
 
-            // Scroll handler optimisé avec RAF
+            // Scroll handler optimisé avec requestAnimationFrame
             let ticking = false;
-
-            window.goodScrollHandler = function() {
+            $('.page').on('scroll', function() {
                 if (!ticking) {
                     window.requestAnimationFrame(() => {
                         updateDots();
@@ -546,30 +556,63 @@
                     });
                     ticking = true;
                 }
-            };
+            }, { passive: true });
+        }
 
-            pageContainer.addEventListener('scroll', window.goodScrollHandler, {
-                passive: true // N'empêche PAS le scroll natif
+        // ============================================
+        // Toggle entre les versions
+        // ============================================
+        toggle.addEventListener('click', () => {
+            isOptimized = !isOptimized;
+            toggle.classList.toggle('active');
+
+            // Cleanup
+            $(document).off('touchmove', badTouchHandler);
+            $('.page').off('scroll');
+
+            // Switch body class pour changer le CSS
+            if (isOptimized) {
+                document.body.className = 'good-version';
+                if (isMobile) setupGoodVersion();
+            } else {
+                document.body.className = 'bad-version';
+                if (isMobile) setupBadVersion();
+            }
+
+            // Reset scroll position
+            $('#page').scrollTop(0);
+            $('#page').scrollLeft(0);
+            updateDots();
+        });
+
+        // ============================================
+        // Init
+        // ============================================
+        if (isMobile) {
+            setupBadVersion(); // Commence avec la mauvaise version
+
+            setTimeout(() => {
+                const message = '🎯 TEST MOBILE\n\n' +
+                      '❌ VERSION ACTUELLE (rouge):\n' +
+                      'Swipez horizontalement ←→\n' +
+                      '→ SACCADÉ car le code force un scroll vertical avec incréments fixes (22px/7px) !\n' +
+                      '→ Listener non-passif bloque le scroll natif\n\n' +
+                      '✅ VERSION OPTIMISÉE (verte):\n' +
+                      'Même swipe horizontal ←→\n' +
+                      '→ FLUIDE car scroll horizontal natif 60 FPS !\n\n' +
+                      '👀 Regardez le compteur FPS en bas à droite\n' +
+                      '👀 Remarquez la fluidité organique (pas de snap page-par-page)';
+
+                alert(message);
+            }, 1000);
+        } else {
+            // Desktop : toujours la rotation (pas de problème)
+            $('.page').on('scroll', function() {
+                updateDots();
             });
         }
 
-        // Init
-        setupScrollBehavior();
         updateDots();
-
-        // Instructions
-        if (isMobile) {
-            setTimeout(() => {
-                alert('🎯 TEST MOBILE\n\n' +
-                      '❌ VERSION ACTUELLE (rouge):\n' +
-                      'Swipez horizontalement ←→\n' +
-                      '→ SACCADÉ car le code force un scroll vertical !\n\n' +
-                      '✅ VERSION OPTIMISÉE (verte):\n' +
-                      'Même swipe horizontal ←→\n' +
-                      '→ FLUIDE car scroll natif !\n\n' +
-                      'Regardez le compteur FPS en bas à droite');
-            }, 800);
-        }
     </script>
 </body>
 </html>
