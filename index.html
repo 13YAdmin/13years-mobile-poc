@@ -240,46 +240,6 @@
             font-size: 0.95rem;
         }
 
-        /* Info Badge */
-        .info-badge {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            padding: 12px 18px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 999;
-        }
-
-        .fps-counter {
-            color: #667eea;
-            font-size: 18px;
-        }
-
-        /* Instructions */
-        .instructions {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            font-size: 12px;
-            max-width: 220px;
-            z-index: 998;
-            line-height: 1.5;
-        }
-
-        .instructions strong {
-            color: #667eea;
-            display: block;
-            margin-bottom: 6px;
-        }
-
         /* Navigation dots */
         .nav-dots {
             position: fixed;
@@ -317,12 +277,6 @@
                 font-size: 10px;
             }
 
-            .instructions {
-                font-size: 11px;
-                max-width: 180px;
-                bottom: 70px;
-            }
-
             .cards-grid {
                 grid-template-columns: 1fr;
             }
@@ -335,20 +289,6 @@
         <span class="toggle-label version-bad">❌ Version Actuelle (choppy)</span>
         <div class="toggle-switch" id="toggle"></div>
         <span class="toggle-label version-good">✅ Version Optimisée (fluide)</span>
-    </div>
-
-    <!-- Instructions -->
-    <div class="instructions">
-        <strong>📱 Mobile :</strong>
-        Swipez HORIZONTALEMENT ←→
-        <br><br>
-        <strong>🖱️ Desktop :</strong>
-        Scroll VERTICALEMENT avec molette
-    </div>
-
-    <!-- Info Badge -->
-    <div class="info-badge">
-        FPS: <span class="fps-counter" id="fps">--</span>
     </div>
 
     <!-- Navigation Dots -->
@@ -435,7 +375,6 @@
         // ============================================
 
         const toggle = document.getElementById('toggle');
-        const fpsCounter = document.getElementById('fps');
         const navDots = document.getElementById('navDots');
         const isMobile = window.innerWidth < 1024;
 
@@ -461,26 +400,6 @@
                 dot.classList.toggle('active', index === currentSection);
             });
         }
-
-        // FPS Counter
-        let frameCount = 0;
-        let lastTime = performance.now();
-
-        function updateFPS() {
-            const currentTime = performance.now();
-            frameCount++;
-
-            if (currentTime >= lastTime + 1000) {
-                const fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
-                fpsCounter.textContent = fps;
-                fpsCounter.style.color = fps >= 50 ? '#10b981' : fps >= 30 ? '#f59e0b' : '#e74c3c';
-                frameCount = 0;
-                lastTime = currentTime;
-            }
-
-            requestAnimationFrame(updateFPS);
-        }
-        updateFPS();
 
         // ============================================
         // ❌ BAD VERSION - Code EXTRAIT de main.js
@@ -600,7 +519,6 @@
                       '✅ VERSION OPTIMISÉE (verte):\n' +
                       'Même swipe horizontal ←→\n' +
                       '→ FLUIDE car scroll horizontal natif 60 FPS !\n\n' +
-                      '👀 Regardez le compteur FPS en bas à droite\n' +
                       '👀 Remarquez la fluidité organique (pas de snap page-par-page)';
 
                 alert(message);
